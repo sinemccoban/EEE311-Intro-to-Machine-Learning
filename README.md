@@ -3,7 +3,7 @@
 
 **Project Overview**
 
-Welcome to the "Clothing Item Recognition with Machine Learning" project! In this project, we aim to develop a machine learning model that can automatically identify and label clothing items worn by a person in an image. With the rapid growth of e-commerce and fashion-related applications, the ability to recognize and classify clothing items from images has become increasingly valuable.
+In this project, we aim to develop a machine learning model that can automatically identify and label clothing items worn by a person in an image. With the rapid growth of e-commerce and fashion-related applications, the ability to recognize and classify clothing items from images has become increasingly valuable.
 
 **Motivation**
 
