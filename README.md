@@ -32,6 +32,8 @@ Our machine-learning model will offer the following features:
 **Deep Learning Frameworks**: We will leverage popular deep learning frameworks like TensorFlow or PyTorch to build, train, and evaluate our models.
 
 **Project Progress Report**
+
+
 **1. Introduction**
 
 In this project, the main goal is to develop a machine learning model for segmenting and classifying fashion images. The dataset comprises a large number of images and their corresponding fine-grained segmentations, with images named by a unique ImageId. The task involves identifying the types of clothing in the images, and the dataset includes both segmented apparel categories and fine-grained attributes. The challenge is to create a robust model that can accurately segment and classify clothing combinations in diverse poses.
