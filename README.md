@@ -31,6 +31,8 @@ Our machine-learning model will offer the following features:
 
 **Deep Learning Frameworks**: We will leverage popular deep learning frameworks like TensorFlow or PyTorch to build, train, and evaluate our models.
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 **Project Progress Report**
 
 
@@ -91,3 +93,120 @@ The columns in the train.csv file include the following information:
 ImageId: The identifier for an image.
 EncodedPixels
 ClassId: The class ID for this mask
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+import numpy as np
+import pandas as pd
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+import os
+import gc
+import sys
+import json
+import glob
+import random
+from pathlib import Path
+
+import cv2
+
+csv_path = "/kaggle/input/imaterialist-fashion-2019-FGVC6/train.csv"
+df = pd.read_csv(csv_path)
+
+import matplotlib.pyplot as plt
+
+import itertools
+from tqdm import tqdm
+
+from imgaug import augmenters as iaa
+from sklearn.model_selection import StratifiedKFold, KFold
+
+with open("/kaggle/input/imaterialist-fashion-2019-FGVC6/label_descriptions.json") as f:
+    label_descriptions = json.load(f)
+
+label_names = [x['name'] for x in label_descriptions['categories']]
+df['CategoryId'] = df['ClassId'].str.split('_').str[0]
+df['AttributeId'] = df['ClassId'].str.split('_').str[1:]
+
+print("Total segments: ", len(df))
+
+
+def show_img(img):
+    I = cv2.imread("/kaggle/input/imaterialist-fashion-2019-FGVC6/train/" + img, cv2.IMREAD_COLOR)
+    I = cv2.cvtColor(I, cv2.COLOR_BGR2RGB)
+    I = cv2.resize(I, (256, 256), interpolation=cv2.INTER_AREA)  
+    plt.imshow(I)
+
+
+def get_mask(df, img_id):
+    a = df[df.ImageId == img_id]
+    a = a.groupby('CategoryId', as_index=False).agg({'EncodedPixels':' '.join, 'Height':'first','Width':'first'})
+    H = a.iloc[0, 2]
+    W = a.iloc[0, 3]
+    masks = []
+    categories = []
+    for line in a[['EncodedPixels', 'CategoryId']].iterrows():
+        mask = np.full(H*W, dtype='int', fill_value=0)
+        EncodedPixels = line[1][0]
+        pixel_loc = list(map(int, EncodedPixels.split(' ')[0::2]))
+        iter_num = list(map(int, EncodedPixels.split(' ')[1::2]))
+        for p, i in zip(pixel_loc, iter_num):
+            mask[p:(p+i)] = line[1][1]
+        mask = mask.reshape(W, H).T
+        masks += [mask]
+        categories += [line[1][1]]
+    return masks, categories
+
+
+def new_mask(mask):
+    matrix = [[0 for x in range(512)] for y in range(512)]
+    for i in range(0, len(mask)):
+        mask[i] = cv2.resize(mask[i], (512, 512), interpolation=cv2.INTER_NEAREST)
+    for m in mask:
+        for i in range(0, 512):
+            for j in range(0, 512):
+                if m[i][j] != 0:
+                    matrix[i][j] = m[i][j]
+    matrix = np.array(matrix)
+    return matrix
+
+
+def masked_image(df, image_id):
+    masked_list, categories = get_mask(df, image_id)
+    plt.figure(figsize=[30, 30])
+    plt.subplot(1, 10, 1)
+    I = cv2.imread("/kaggle/input/imaterialist-fashion-2019-FGVC6/train/" + image_id, cv2.IMREAD_COLOR)
+    I = cv2.cvtColor(I, cv2.COLOR_BGR2RGB)
+    I = cv2.resize(I, (512, 512), interpolation=cv2.INTER_AREA)
+    plt.imshow(I)
+    plt.title('Input Image')
+    i = 1
+    gray = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
+
+    plt.imshow(I)
+    for mask, cat in zip(masked_list, categories):
+        mask = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_NEAREST)
+        plt.subplot(1, 10, i+1)
+        plt.imshow(mask)
+        plt.title(label_names[int(cat)])
+        plt.subplots_adjust(wspace=0.4, hspace=-0.65)
+        i += 1
+        if i == 10:
+            break
+    
+    new_mask_ = new_mask(masked_list)
+    I[new_mask_ == 0] = 0
+    plt.imshow(I)
+
+
+ids = df['ImageId'].unique()
+for idx in ids[0:10]:
+    masked_image(df, idx)
+
+
